@@ -20751,47 +20751,29 @@ var React = require('react');
 var ListItem = require('./ListItem.jsx'); //import non-npm-module
 var Reflux = require('reflux');
 var Actions = require('../reflux/actions.jsx');
-var IngredientStore = require('../reflux/ingredients-store.jsx');
+var PokemonStore = require('../reflux/pokemons-store.jsx');
 
 var List = React.createClass({
   displayName: 'List',
 
-  mixins: [Reflux.listenTo(IngredientStore, 'onChange')],
+  mixins: [Reflux.listenTo(PokemonStore, 'onChange')],
   getInitialState: function () {
-    return { ingredients: [], newText: "" };
+    return { pokemons: [] };
   },
   componentWillMount: function () {
-    Actions.getIngredients();
+    Actions.getPokemons();
   },
-  onChange: function (event, ingredients) {
-    this.setState({ ingredients: ingredients });
-  },
-  onInputChange: function (e) {
-    this.setState({ newText: e.target.value });
-  },
-  onClick: function (e) {
-    if (this.state.newText) {
-      Actions.postIngredient(this.state.newText);
-    }
-    this.setState({ newText: "" });
+  onChange: function (event, pokemons) {
+    this.setState({ pokemons: pokemons.results });
   },
   render: function () {
-    var listItems = this.state.ingredients.map(function (item) {
-      return React.createElement(ListItem, { key: item.id, ingredient: item.text });
+    var listItems = this.state.pokemons.map(function (item) {
+      return React.createElement(ListItem, { key: item.id, pokemon: item.name, pokemon_url: item.url });
     });
 
     return React.createElement(
       'div',
       null,
-      React.createElement('input', {
-        placeholder: 'Add Item',
-        value: this.state.newText,
-        onChange: this.onInputChange }),
-      React.createElement(
-        'button',
-        { onClick: this.onClick },
-        'Add Item'
-      ),
       React.createElement(
         'ul',
         null,
@@ -20803,7 +20785,7 @@ var List = React.createClass({
 
 module.exports = List;
 
-},{"../reflux/actions.jsx":182,"../reflux/ingredients-store.jsx":183,"./ListItem.jsx":180,"react":157,"reflux":174}],180:[function(require,module,exports){
+},{"../reflux/actions.jsx":182,"../reflux/pokemons-store.jsx":183,"./ListItem.jsx":180,"react":157,"reflux":174}],180:[function(require,module,exports){
 var React = require('react');
 
 var ListItem = React.createClass({
@@ -20814,9 +20796,13 @@ var ListItem = React.createClass({
       'li',
       null,
       React.createElement(
-        'h4',
-        null,
-        this.props.ingredient
+        'a',
+        { href: this.props.pokemon_url },
+        React.createElement(
+          'h4',
+          null,
+          this.props.pokemon
+        )
       )
     );
   }
@@ -20830,12 +20816,12 @@ var ReactDOM = require('react-dom');
 var List = require('./components/List.jsx');
 
 //Grab the DOM, insert the list, and put it in element that has ingredients id
-ReactDOM.render(React.createElement(List, null), document.getElementById('ingredients'));
+ReactDOM.render(React.createElement(List, null), document.getElementById('pokemons'));
 
 },{"./components/List.jsx":179,"react":157,"react-dom":1}],182:[function(require,module,exports){
 var Reflux = require('reflux');
 
-var Actions = Reflux.createActions(['getIngredients', 'postIngredient']);
+var Actions = Reflux.createActions(['getPokemons']);
 
 module.exports = Actions;
 
@@ -20844,56 +20830,29 @@ var HTTP = require('../services/httpservice');
 var Reflux = require('reflux');
 var Actions = require('./actions.jsx');
 
-var IngredientStore = Reflux.createStore({
+var PokemonStore = Reflux.createStore({
   listenables: [Actions],
-  getIngredients: function () {
-    HTTP.get('/ingredients').then(function (data) {
-      this.ingredients = data;
+  getPokemons: function () {
+    HTTP.get('/pokemon/').then(function (data) {
+      this.pokemons = data;
       this.triggerUpdate();
     }.bind(this));
   },
-  postIngredient: function (text) {
-    if (!this.ingredients) {
-      this.ingredients = [];
-    }
-    var ingredient = {
-      "text": text,
-      "id": Math.floor(Date.now() / 1000) + text
-    };
-    this.ingredients.push(ingredient);
-    this.triggerUpdate();
-
-    HTTP.post('/ingredients', ingredient).then(function (response) {
-      this.getIngredients();
-    }.bind(this));
-  },
   triggerUpdate: function () {
-    this.trigger('change', this.ingredients);
+    this.trigger('change', this.pokemons);
   }
 });
 
-module.exports = IngredientStore;
+module.exports = PokemonStore;
 
 },{"../services/httpservice":184,"./actions.jsx":182,"reflux":174}],184:[function(require,module,exports){
 var Fetch = require('whatwg-fetch');
-var baseUrl = 'http://localhost:6061';
+var baseUrl = 'http://pokeapi.co/api/v2';
 
 var service = {
   get: function (url) {
     return fetch(baseUrl + url).then(function (response) {
       return response.json();
-    });
-  },
-  post: function (url, ingredient) {
-    return fetch(baseUrl + url, {
-      headers: {
-        'Accept': 'text/plain',
-        'Content-Type': 'application/json'
-      },
-      method: 'post',
-      body: JSON.stringify(ingredient)
-    }).then(function (response) {
-      return response;
     });
   }
 };

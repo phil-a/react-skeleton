@@ -2,40 +2,26 @@ var React = require('react');
 var ListItem = require('./ListItem.jsx'); //import non-npm-module
 var Reflux = require('reflux');
 var Actions = require('../reflux/actions.jsx');
-var IngredientStore = require('../reflux/ingredients-store.jsx');
+var PokemonStore = require('../reflux/pokemons-store.jsx');
 
 var List = React.createClass({
-  mixins:[Reflux.listenTo(IngredientStore, 'onChange')],
+  mixins:[Reflux.listenTo(PokemonStore, 'onChange')],
   getInitialState: function() {
-    return { ingredients:[], newText: "" };
+    return { pokemons:[]};
   },
   componentWillMount: function() {
-    Actions.getIngredients();
+    Actions.getPokemons();
   },
-  onChange: function(event, ingredients) {
-    this.setState({ingredients: ingredients});
-  },
-  onInputChange: function(e) {
-    this.setState({newText: e.target.value});
-  },
-  onClick: function(e) {
-    if (this.state.newText) {
-      Actions.postIngredient(this.state.newText);
-    }
-    this.setState({newText: ""});
+  onChange: function(event, pokemons) {
+    this.setState({pokemons: pokemons.results});
   },
   render: function() {
-    var listItems = this.state.ingredients.map(function(item) {
-      return <ListItem key={item.id} ingredient={item.text} />;
+    var listItems = this.state.pokemons.map(function(item) {
+      return <ListItem key={item.id} pokemon={item.name} pokemon_url={item.url}/>;
     });
 
     return (
       <div>
-        <input
-        placeholder="Add Item"
-        value={this.state.newText}
-        onChange={this.onInputChange} />
-        <button onClick={this.onClick}>Add Item</button>
         <ul>{listItems}</ul>
       </div>
     );
